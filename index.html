@@ -310,33 +310,66 @@
   }
   .vote-label { font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 1px; color: var(--cream-dim); text-transform: uppercase; min-width: 70px; }
 
-  .vote-tally {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin: 0.5rem 0;
-  }
-  .tally-num {
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 1.8rem;
-    color: var(--gold);
-    min-width: 40px;
-    text-align: center;
-  }
-  .tally-needed { font-family: 'Cinzel', serif; font-size: 0.65rem; color: var(--cream-dim); letter-spacing: 1px; }
-  .tally-btns { display: flex; gap: 0.4rem; }
-  .tally-btn {
-    background: var(--bg-panel);
-    border: 1px solid var(--border-glow);
-    color: var(--cream);
-    width: 30px; height: 30px;
-    font-size: 1rem;
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s;
+  /* Nomination tracker table */
+  .nom-table { width: 100%; border-collapse: collapse; margin: 0.4rem 0 0.5rem; }
+  .nom-table th {
     font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    letter-spacing: 1.5px;
+    color: var(--cream-dim);
+    text-transform: uppercase;
+    padding: 0.2rem 0.3rem;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+    font-weight: normal;
   }
-  .tally-btn:hover { background: rgba(139,34,82,0.4); }
+  .nom-table th.votes-col { text-align: center; }
+  .nom-table td {
+    font-family: 'IM Fell English', serif;
+    font-size: 0.82rem;
+    color: var(--cream);
+    padding: 0.3rem 0.3rem;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    vertical-align: middle;
+  }
+  .nom-table tr.nom-leader td { background: rgba(192,57,43,0.12); }
+  .nom-table tr.nom-tied td { background: rgba(201,148,58,0.1); }
+  .nom-table tr.nom-leader td .nom-target-name { color: var(--evil-light); font-weight: bold; }
+  .nom-votes-input {
+    width: 52px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border-glow);
+    color: var(--gold);
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 1rem;
+    text-align: center;
+    padding: 0.1rem 0.2rem;
+    display: block;
+    margin: 0 auto;
+  }
+  .nom-votes-input:focus { outline: 1px solid var(--gold); border-color: var(--gold); }
+  .nom-del-btn {
+    background: transparent;
+    border: none;
+    color: rgba(192,57,43,0.5);
+    font-size: 0.75rem;
+    cursor: pointer;
+    padding: 0 0.2rem;
+    line-height: 1;
+  }
+  .nom-del-btn:hover { color: var(--evil-light); }
+  .nom-empty-row td { color: var(--cream-dim); font-family: 'Cinzel', serif; font-size: 0.6rem; letter-spacing: 1px; text-align: center; padding: 0.5rem; opacity: 0.6; }
+  .nom-status-bar {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: 1px;
+    text-align: center;
+    padding: 0.3rem;
+    margin-bottom: 0.4rem;
+  }
+  .nom-status-bar.tie { color: var(--gold); background: rgba(201,148,58,0.1); border: 1px solid rgba(201,148,58,0.3); }
+  .nom-status-bar.leader { color: var(--evil-light); background: rgba(192,57,43,0.1); border: 1px solid rgba(192,57,43,0.3); }
+  .nom-status-bar.waiting { color: var(--cream-dim); }
 
   .execute-btn {
     width: 100%;
@@ -350,7 +383,7 @@
     cursor: pointer;
     text-transform: uppercase;
     transition: all 0.2s;
-    margin-top: 0.5rem;
+    margin-top: 0.3rem;
   }
   .execute-btn:hover { background: rgba(192,57,43,0.5); box-shadow: 0 0 12px rgba(192,57,43,0.4); }
   .execute-btn:disabled { opacity: 0.3; cursor: not-allowed; }
@@ -880,6 +913,7 @@
     <span id="phaseText">Night 1 — First Night</span>
   </div>
   <div class="round-display" id="roundDisplay">Round 1</div>
+  <button class="phase-btn" id="revertPhaseBtn" style="opacity:0.7;">‹ Go Back</button>
   <button class="phase-btn" id="advancePhaseBtn">Advance Phase ›</button>
   <button class="phase-btn" id="saveGameBtn">Save</button>
   <button class="phase-btn" id="loadGameBtn">Load</button>
@@ -949,27 +983,25 @@
           <span class="vote-label">Nominated:</span>
           <select class="vote-select" id="nominatedSelect"><option value="">— select —</option></select>
         </div>
-        <button id="nominateBtn" style="width:100%;background:transparent;border:1px solid var(--border-glow);color:var(--cream-dim);font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:2px;padding:0.35rem;cursor:pointer;text-transform:uppercase;margin-bottom:0.5rem;transition:all 0.15s;">
+        <button type="button" id="nominateBtn" style="width:100%;background:transparent;border:1px solid var(--border-glow);color:var(--cream-dim);font-family:'Cinzel',serif;font-size:0.65rem;letter-spacing:2px;padding:0.35rem;cursor:pointer;text-transform:uppercase;margin-bottom:0.5rem;transition:all 0.15s;">
           ✋ Record Nomination
         </button>
-        <div class="vote-tally">
-          <div>
-            <div style="font-family:'Cinzel',serif; font-size:0.6rem; color:var(--cream-dim); letter-spacing:1px; text-transform:uppercase;">Vote Count</div>
-            <div class="tally-num" id="voteCount">0</div>
-          </div>
-          <div class="tally-btns">
-            <button class="tally-btn" id="voteDownBtn">−</button>
-            <button class="tally-btn" id="voteUpBtn">+</button>
-            <button class="tally-btn" id="voteResetBtn" style="font-size:0.6rem;">↺</button>
-          </div>
-          <div>
-            <div class="tally-needed" id="tallyStatus"></div>
-          </div>
-        </div>
-        <div id="voteModifierNote" style="display:none;font-size:0.65rem;color:var(--gold);font-family:'Cinzel',serif;letter-spacing:1px;margin-top:0.2rem;text-align:center;"></div>
-        <div id="executionWarning" style="display:none; background:rgba(192,57,43,0.15); border:1px solid var(--evil); padding:0.4rem; font-size:0.7rem; color:var(--evil-light); font-family:'Cinzel',serif; letter-spacing:1px; text-align:center; margin-top:0.3rem;">
-          ⚠ ABOUT TO DIE — Enough votes!
-        </div>
+
+        <table class="nom-table" id="nomTable">
+          <thead>
+            <tr>
+              <th>Nominator → Nominated</th>
+              <th class="votes-col">Votes</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="nomTableBody">
+            <tr class="nom-empty-row"><td colspan="3">No nominations yet</td></tr>
+          </tbody>
+        </table>
+
+        <div class="nom-status-bar waiting" id="nomStatusBar">Votes needed: —</div>
+        <div id="voteModifierNote" style="display:none;font-size:0.65rem;color:var(--gold);font-family:'Cinzel',serif;letter-spacing:1px;margin-bottom:0.3rem;text-align:center;"></div>
         <button class="execute-btn" id="executeBtn" disabled>
           ☩ Execute Player ☩
         </button>
@@ -3058,6 +3090,7 @@ let state = {
   currentVotes: 0,
   nominatorId: null,
   nominatedId: null,
+  nominations: [],  // [{nominatorId, nominatedId, votes}]
   log: [],
   nightStepsDone: [],
   gameOver: false,
@@ -3389,6 +3422,7 @@ function initGame() {
   state.currentVotes = 0;
   state.nominatorId = null;
   state.nominatedId = null;
+  state.nominations = [];
   state.log = [];
   state.nightStepsDone = [];
   state.gameOver = false;
@@ -3443,6 +3477,10 @@ function newGame() {
 // ============================================================
 function advancePhase() {
   if (state.gameOver) return;
+  var nomSel = document.getElementById('nominatorSelect');
+  var nommedSel = document.getElementById('nominatedSelect');
+  if (nomSel) nomSel.value = '';
+  if (nommedSel) nommedSel.value = '';
 
   if (state.phase === 'night') {
     // Transition night → day
@@ -3450,6 +3488,7 @@ function advancePhase() {
     state.executedToday = false;
     state.nightStepsDone = [];
     state._minionNominatedToday = false;
+    state.nominations = [];
     // Reset daily nomination flags and vote modifiers
     state.players.forEach(p => {
       p.nominatedToday = false;
@@ -3536,6 +3575,7 @@ function advancePhase() {
     state.currentVotes = 0;
     state.nominatorId = null;
     state.nominatedId = null;
+    state.nominations = [];
     state._witchCursedId = null; // Witch's previous curse expires at dusk
     state._exorcistTargetId = null; // Exorcist pick resets each night
     // Clear Flowergirl vote-tracking on all players
@@ -3543,12 +3583,52 @@ function advancePhase() {
     addLog(`Night ${state.round} falls upon Ravenswood Bluff.`, 'phase');
     checkWinCondition();
   }
+  rebuildNomTable();
+  refreshNomStatus();
   render();
 }
 
-// ============================================================
-// PLAYER ACTIONS
-// ============================================================
+function revertPhase() {
+  if (state.gameOver) return;
+  showConfirm(
+    '‹ Go Back a Phase — phase and round counter will revert. Player deaths and status changes are NOT undone.',
+    function() {
+      if (state.phase === 'day') {
+        // Revert day → back to night
+        state.phase = 'night';
+        // Undo round increment: night→day doesn't increment round, so no change needed
+        // Clear nominations since we're back at night
+        state.nominations = [];
+        state.executedToday = false;
+        state.nightStepsDone = [];
+        state._minionNominatedToday = false;
+        // Restore per-player nomination flags
+        state.players.forEach(function(p) {
+          p.nominatedToday = false;
+          p.hasNominatedToday = false;
+        });
+        addLog('↩ Phase reverted: back to Night ' + state.round + '.', 'phase');
+      } else {
+        // Revert night → back to previous day (undo the round increment)
+        if (state.round <= 1) {
+          addLog('Cannot go back before Round 1.', 'phase');
+          render();
+          return;
+        }
+        state.phase = 'day';
+        state.round -= 1;
+        state.nominations = [];
+        state.nightStepsDone = [];
+        addLog('↩ Phase reverted: back to Day ' + state.round + '.', 'phase');
+      }
+      rebuildNomTable();
+      refreshNomStatus();
+      render();
+    }
+  );
+}
+
+
 function getPlayer(id) {
   return state.players.find(function(p) { return p.id === id; });
 }
@@ -3978,6 +4058,11 @@ function handleNomination(nominatorId, nominatedId) {
       addLog('Virgin was nominated — but nominator is not a sober Townsfolk, so no immediate execution.', 'phase');
     }
   }
+  // Add to nominations tracker
+  var newNom = { nominatorId: nominatorId, nominatedId: nominatedId, votes: 0 };
+  state.nominations.push(newNom);
+  addNomTableRow(newNom, state.nominations.length - 1);
+  refreshNomStatus();
   render();
 }
 
@@ -4115,82 +4200,171 @@ function useVoteToken(id) {
   render();
 }
 
+
 // ============================================================
 // VOTING & EXECUTION
 // ============================================================
-function adjustVote(delta) {
-  state.currentVotes = Math.max(0, state.currentVotes + delta);
-  updateVoteDisplay();
+
+// Called once when a nomination is added — appends a row to the table.
+// Does NOT rebuild existing rows, so typed vote numbers are never wiped by render().
+function addNomTableRow(nom, idx) {
+  var tbody = document.getElementById('nomTableBody');
+  if (!tbody) return;
+  var emptyRow = tbody.querySelector('.nom-empty-row');
+  if (emptyRow) emptyRow.remove();
+
+  var nominator = getPlayer(nom.nominatorId);
+  var nominated = getPlayer(nom.nominatedId);
+  var nomrName = nominator ? nominator.name : '?';
+  var nomdName = nominated ? nominated.name : '?';
+
+  var tr = document.createElement('tr');
+  tr.dataset.nomIdx = idx;
+  tr.innerHTML =
+    '<td><span style="color:var(--cream-dim);font-size:0.72rem;">' + nomrName + '</span>' +
+    ' <span style="color:var(--cream-dim);">→</span> ' +
+    '<span class="nom-target-name">' + nomdName + '</span></td>' +
+    '<td style="text-align:center;">' +
+      '<input type="number" class="nom-votes-input" min="0" max="99" value="0" data-nom-idx="' + idx + '">' +
+    '</td>' +
+    '<td style="text-align:center;">' +
+      '<button type="button" class="nom-del-btn" title="Remove">✕</button>' +
+    '</td>';
+
+  var input = tr.querySelector('.nom-votes-input');
+  input.addEventListener('input', function() {
+    var v = parseInt(this.value) || 0;
+    if (v < 0) { v = 0; this.value = 0; }
+    var i = parseInt(this.dataset.nomIdx);
+    if (state.nominations[i] !== undefined) state.nominations[i].votes = v;
+    refreshNomStatus();
+  });
+
+  var delBtn = tr.querySelector('.nom-del-btn');
+  delBtn.addEventListener('click', function() {
+    var i = parseInt(tr.dataset.nomIdx);
+    var n = state.nominations[i];
+    if (n) {
+      var nr = getPlayer(n.nominatorId);
+      var nd = getPlayer(n.nominatedId);
+      if (nr) nr.hasNominatedToday = false;
+      if (nd) nd.nominatedToday = false;
+    }
+    state.nominations.splice(i, 1);
+    rebuildNomTable();
+    refreshNomStatus();
+    render();
+  });
+
+  tbody.appendChild(tr);
 }
 
-function resetVote() {
-  state.currentVotes = 0;
-  updateVoteDisplay();
+// Full rebuild — called after a deletion to re-index all rows.
+function rebuildNomTable() {
+  var tbody = document.getElementById('nomTableBody');
+  if (!tbody) return;
+  tbody.innerHTML = '';
+  if (state.nominations.length === 0) {
+    tbody.innerHTML = '<tr class="nom-empty-row"><td colspan="3">No nominations yet</td></tr>';
+    return;
+  }
+  state.nominations.forEach(function(nom, idx) {
+    addNomTableRow(nom, idx);
+  });
 }
 
-function updateVoteDisplay() {
-  const aliveCount = state.players.filter(p => p.alive).length;
-  const needed = Math.ceil(aliveCount / 2);
-  // Apply vote modifiers: calculate effective vote count
-  // Players with voteModifier === 3 (Bureaucrat) have their vote count as 3 instead of 1
-  // Players with voteModifier === -1 (Thief) have their vote count as -1 instead of 1
-  const modifiedPlayers = state.players.filter(p => p.alive && p.voteModifier !== 0);
-  const modNote = document.getElementById('voteModifierNote');
+// Only updates status bar + execute button — never touches table rows.
+function refreshNomStatus() {
+  var aliveCount = state.players.filter(function(p) { return p.alive; }).length;
+  var needed = Math.ceil(aliveCount / 2);
+  var statusBar = document.getElementById('nomStatusBar');
+  var executeBtn = document.getElementById('executeBtn');
+  var modNote = document.getElementById('voteModifierNote');
+
   if (modNote) {
+    var modifiedPlayers = state.players.filter(function(p) { return p.alive && p.voteModifier !== 0; });
     var notes = [];
     modifiedPlayers.forEach(function(mp) {
-      if (mp.voteModifier === 3) notes.push(mp.name + '\'s vote counts as 3 (Bureaucrat)');
-      if (mp.voteModifier === -1) notes.push(mp.name + '\'s vote counts as -1 (Thief)');
+      if (mp.voteModifier === 3) notes.push(mp.name + "\'s vote ×3 (Bureaucrat)");
+      if (mp.voteModifier === -1) notes.push(mp.name + "\'s vote −1 (Thief)");
     });
     modNote.style.display = notes.length ? 'block' : 'none';
-    modNote.textContent = notes.length ? 'Active modifiers: ' + notes.join(' | ') : '';
+    modNote.textContent = notes.length ? 'Modifiers: ' + notes.join(' | ') : '';
   }
-  // Calculate effective votes: raw count + adjustments for modified voters
-  // The ST clicks +/- for each voter; modifiers auto-adjust the displayed effective total
-  var effectiveVotes = state.currentVotes;
-  // Show effective votes with modifier note
-  document.getElementById('voteCount').textContent = effectiveVotes;
-  const canExecute = effectiveVotes >= needed;
-  document.getElementById('executeBtn').disabled = !canExecute || state.executedToday;
-  document.getElementById('executionWarning').style.display = canExecute ? 'block' : 'none';
 
-  const status = document.getElementById('tallyStatus');
-  if (canExecute) {
-    status.textContent = '✓ Enough votes!';
-    status.style.color = 'var(--evil-light)';
+  if (!executeBtn) return;
+
+  if (state.nominations.length === 0) {
+    if (statusBar) { statusBar.className = 'nom-status-bar waiting'; statusBar.textContent = 'Votes needed to execute: ' + needed; }
+    executeBtn.disabled = true;
+    executeBtn.textContent = '\u2629 Execute Player \u2629';
+    return;
+  }
+
+  var maxVotes = 0;
+  state.nominations.forEach(function(n) { if (n.votes > maxVotes) maxVotes = n.votes; });
+  var leaders = state.nominations.filter(function(n) { return n.votes === maxVotes && maxVotes > 0; });
+  var isTie = leaders.length > 1;
+  var hasEnough = maxVotes >= needed;
+
+  // Update row highlight classes
+  document.querySelectorAll('#nomTableBody tr[data-nom-idx]').forEach(function(tr) {
+    var i = parseInt(tr.dataset.nomIdx);
+    var nom = state.nominations[i];
+    if (!nom) return;
+    var isLeader = nom.votes === maxVotes && maxVotes > 0;
+    tr.className = (isLeader && isTie) ? 'nom-tied' : (isLeader && hasEnough ? 'nom-leader' : '');
+  });
+
+  var canExecute = hasEnough && !isTie && !state.executedToday;
+  executeBtn.disabled = !canExecute;
+
+  if (state.executedToday) {
+    if (statusBar) { statusBar.className = 'nom-status-bar waiting'; statusBar.textContent = 'Execution carried out today'; }
+    executeBtn.textContent = '\u2629 Execute Player \u2629';
+  } else if (isTie && hasEnough) {
+    if (statusBar) { statusBar.className = 'nom-status-bar tie'; statusBar.textContent = '\u2696 Tie at ' + maxVotes + ' votes — cannot execute'; }
+    executeBtn.textContent = '\u2629 Execute Player \u2629';
+  } else if (canExecute) {
+    var leaderPlayer = getPlayer(leaders[0].nominatedId);
+    var lname = leaderPlayer ? leaderPlayer.name : '?';
+    if (statusBar) { statusBar.className = 'nom-status-bar leader'; statusBar.textContent = '\u26a0 ' + lname + ' leads with ' + maxVotes + ' votes'; }
+    executeBtn.textContent = '\u2629 Execute ' + lname + ' \u2629';
   } else {
-    status.textContent = `Need ${needed - state.currentVotes} more`;
-    status.style.color = 'var(--cream-dim)';
+    if (statusBar) { statusBar.className = 'nom-status-bar waiting'; statusBar.textContent = 'Need ' + needed + ' votes (highest: ' + maxVotes + ')'; }
+    executeBtn.textContent = '\u2629 Execute Player \u2629';
   }
 }
+
+function updateVoteDisplay() { refreshNomStatus(); }
+function adjustVote(delta) {}
+function resetVote() {}
 
 function executePlayer() {
   if (state.executedToday) { alert('Only one execution per day!'); return; }
-  const sel = document.getElementById('nominatedSelect');
-  const id = parseInt(sel.value);
-  if (isNaN(id)) { alert('Select a player to execute.'); return; }
+  var aliveCount = state.players.filter(function(p) { return p.alive; }).length;
+  var needed = Math.ceil(aliveCount / 2);
+  var maxVotes = 0;
+  state.nominations.forEach(function(n) { if (n.votes > maxVotes) maxVotes = n.votes; });
+  var leaders = state.nominations.filter(function(n) { return n.votes === maxVotes && maxVotes >= needed; });
+  if (leaders.length === 0) { alert('No nomination has enough votes to execute.'); return; }
+  if (leaders.length > 1) { alert('There is a tie — cannot execute.'); return; }
+  var id = leaders[0].nominatedId;
   state.executedToday = true;
   state.currentVotes = 0;
-  // Track who was executed for Undertaker briefing
-  state.players.forEach(p => { p._executedThisRound = false; });
-  const target = getPlayer(id);
+  state.players.forEach(function(p) { p._executedThisRound = false; });
+  var target = getPlayer(id);
   if (target) target._executedThisRound = true;
   killPlayer(id, 'execution');
-
-  // Mastermind extra day: if this IS the extra day and a good player was executed, evil wins
   if (state._mastermindExtraDay === 'active' && target && target.alignment === 'good' && !state.gameOver) {
     state._mastermindExtraDay = false;
     addLog('Mastermind: a good player was executed on the extra day — Evil wins!', 'win');
-    triggerWin('evil', 'The Mastermind\'s gambit succeeds. A good player was executed.');
+    triggerWin('evil', "The Mastermind\'s gambit succeeds. A good player was executed.");
   }
-
-  updateVoteDisplay();
+  refreshNomStatus();
   render();
 }
 
-// ============================================================
-// WIN CHECK
-// ============================================================
 function checkWinCondition() {
   if (state.gameOver) return;
   const alive = state.players.filter(p => p.alive);
@@ -4893,7 +5067,8 @@ function renderSelects() {
     players.forEach(p => {
       const opt = document.createElement('option');
       opt.value = p.id;
-      opt.textContent = p.name + ' (' + p.character + ')';
+      opt.textContent = p.name + ' (' + p.character + ')' + (p.hasNominatedToday ? ' ✓nom' : '') + (p.nominatedToday ? ' ✓tgt' : '');
+      opt.disabled = false;
       el.appendChild(opt);
     });
     if (prev) el.value = prev;
@@ -4987,6 +5162,7 @@ function loadGame() {
     if (!raw) { alert('No saved game found.'); return; }
     var saveData = JSON.parse(raw);
     state = saveData.state;
+    if (!state.nominations) state.nominations = [];
     if (saveData.redHerringId !== null) {
       _redHerring = getPlayer(saveData.redHerringId);
     } else {
@@ -4999,6 +5175,8 @@ function loadGame() {
     }
     addLog('Game loaded from save (' + (saveData.savedAt || 'unknown time') + ').', 'phase');
     render();
+    rebuildNomTable();
+    refreshNomStatus();
   } catch (e) {
     alert('Load failed: ' + e.message);
   }
@@ -5028,6 +5206,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
   // Phase bar
   document.getElementById('advancePhaseBtn').addEventListener('click', advancePhase);
+  document.getElementById('revertPhaseBtn').addEventListener('click', revertPhase);
   document.getElementById('saveGameBtn').addEventListener('click', saveGame);
   document.getElementById('loadGameBtn').addEventListener('click', function() {
     if (confirm('Load saved game? Current game will be replaced.')) loadGame();
@@ -5055,10 +5234,10 @@ document.addEventListener('DOMContentLoaded', function() {
     var nommedId = parseInt(document.getElementById('nominatedSelect').value);
     if (isNaN(nomId) || isNaN(nommedId)) { alert('Select both nominator and nominated player.'); return; }
     handleNomination(nomId, nommedId);
+    // Reset dropdowns after render() so next nomination needs fresh picks
+    document.getElementById('nominatorSelect').value = '';
+    document.getElementById('nominatedSelect').value = '';
   });
-  document.getElementById('voteUpBtn').addEventListener('click', function() { adjustVote(1); });
-  document.getElementById('voteDownBtn').addEventListener('click', function() { adjustVote(-1); });
-  document.getElementById('voteResetBtn').addEventListener('click', resetVote);
   document.getElementById('executeBtn').addEventListener('click', executePlayer);
   // Load saved game button in setup modal
   var loadSavedBtn = document.getElementById('loadSavedGameBtn');
