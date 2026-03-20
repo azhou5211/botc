@@ -1,6 +1,8 @@
 # 🩸 Blood on the Clocktower — Digital Grimoire
 
-A single-file, browser-based Grimoire tool for **Blood on the Clocktower** Storytellers. No installation, no build step, no backend — just open the HTML file and run your game.
+A single-file, browser-based Grimoire tool for **Blood on the Clocktower** Storytellers. No installation, no build step, no backend. Just open the HTML file and start your game, or run it directly from GitHub. 
+
+Github Page: https://azhou5211.github.io/botc/
 
 ---
 
