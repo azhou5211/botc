@@ -684,6 +684,105 @@
   ::-webkit-scrollbar-track { background: var(--bg-deep); }
   ::-webkit-scrollbar-thumb { background: var(--border-glow); }
 
+  /* === CARD TYPE TINTING === */
+  .player-card[data-ptype="townsfolk"] { background: #181325; border-color: #3a2f5a; }
+  .player-card[data-ptype="outsider"]  { background: #131828; border-color: #2a3564; }
+  .player-card[data-ptype="minion"]    { background: #24100e; border-color: #5a2020; }
+  .player-card[data-ptype="demon"]     { background: #2a0808; border-color: #7a1212; }
+  .player-card[data-ptype="traveller"] { background: #160d20; border-color: #5a3a7a; }
+  .player-card[data-ptype="townsfolk"].dead { background: #110e1a; }
+  .player-card[data-ptype="outsider"].dead  { background: #0e101a; }
+  .player-card[data-ptype="minion"].dead    { background: #160808; }
+  .player-card[data-ptype="demon"].dead     { background: #180505; }
+
+  /* === CHARACTER TOOLTIP === */
+  .char-tooltip { position: relative; cursor: help; display: inline; }
+  .char-tooltip::after {
+    content: attr(data-ability);
+    position: absolute;
+    left: 0; top: 120%;
+    background: #1a0d17;
+    border: 1px solid var(--border-glow);
+    color: var(--cream);
+    font-size: 0.68rem;
+    font-style: normal;
+    font-family: 'IM Fell English', Georgia, serif;
+    line-height: 1.5;
+    padding: 0.5rem 0.7rem;
+    width: 240px;
+    z-index: 50;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.7);
+  }
+  .char-tooltip:hover::after { opacity: 1; }
+
+  /* === SEAT REORDER BUTTONS === */
+  .seat-btns { display: flex; flex-direction: column; gap: 1px; flex-shrink: 0; }
+  .seat-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--cream-dim);
+    width: 16px; height: 14px;
+    font-size: 0.45rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0; line-height: 1;
+    transition: all 0.12s;
+  }
+  .seat-btn:hover { border-color: var(--gold); color: var(--gold); }
+
+  /* === TIMER WIDGET === */
+  .timer-widget {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+  }
+  .timer-display {
+    font-family: 'Cinzel Decorative', serif;
+    font-size: 2rem;
+    color: var(--gold);
+    text-align: center;
+    line-height: 1;
+    margin: 0.4rem 0;
+    letter-spacing: 2px;
+    transition: color 0.3s;
+  }
+  .timer-display.warning { color: var(--drunk); }
+  .timer-display.done    { color: var(--evil-light); animation: pulse 0.5s ease-in-out 4; }
+  .timer-controls { display: flex; gap: 0.4rem; margin-bottom: 0.4rem; }
+  .timer-btn {
+    background: transparent;
+    border: 1px solid var(--border-glow);
+    color: var(--cream);
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 1px;
+    padding: 0.3rem 0.5rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+    flex: 1;
+  }
+  .timer-btn:hover { background: rgba(139,34,82,0.3); color: var(--gold-light); }
+  .timer-btn.running { background: rgba(139,34,82,0.35); border-color: var(--accent-bright); }
+  .timer-presets { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+  .timer-preset {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--cream-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    padding: 0.2rem 0.45rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.12s;
+  }
+  .timer-preset:hover { border-color: var(--gold); color: var(--gold); }
+
   /* === TRAVELLER STYLES === */
   :root { --traveller: #a57fd4; }
   .traveller-card {
@@ -915,6 +1014,7 @@
   <div class="round-display" id="roundDisplay">Round 1</div>
   <button class="phase-btn" id="revertPhaseBtn" style="opacity:0.7;">‹ Go Back</button>
   <button class="phase-btn" id="advancePhaseBtn">Advance Phase ›</button>
+  <button class="phase-btn" id="undoBtn" title="Undo last action">↩ Undo</button>
   <button class="phase-btn" id="saveGameBtn">Save</button>
   <button class="phase-btn" id="loadGameBtn">Load</button>
   <button class="phase-btn" id="newGameBtn">New Game</button>
@@ -967,6 +1067,26 @@
       <span style="font-family:'Cinzel',serif; font-size:0.6rem; letter-spacing:2px; color:var(--cream-dim); text-transform:uppercase;">Votes needed for execution:</span>
       <div style="font-family:'Cinzel Decorative',serif; font-size:1.4rem; color:var(--gold);" id="votesNeeded">—</div>
       <div style="font-size:0.6rem; color:var(--cream-dim); font-style:italic;">≥ half of alive players</div>
+    </div>
+
+    <hr class="divider">
+
+    <!-- TIMER -->
+    <div class="timer-widget">
+      <div class="section-title" style="margin-bottom:0.5rem;">⏱ Countdown Timer</div>
+      <div class="timer-display" id="timerDisplay">1:00</div>
+      <div class="timer-controls">
+        <button class="timer-btn" id="timerStartBtn">Start</button>
+        <button class="timer-btn" id="timerPauseBtn">Pause</button>
+        <button class="timer-btn" id="timerResetBtn">Reset</button>
+      </div>
+      <div class="timer-presets">
+        <button class="timer-preset" data-secs="30">30s</button>
+        <button class="timer-preset" data-secs="60">1m</button>
+        <button class="timer-preset" data-secs="120">2m</button>
+        <button class="timer-preset" data-secs="180">3m</button>
+        <button class="timer-preset" data-secs="300">5m</button>
+      </div>
     </div>
 
     <hr class="divider">
@@ -1443,6 +1563,44 @@ const TEMPLATES = {
 
 // Stored red herring across rounds (set on night 1)
 let _redHerring = null;
+
+// ── Undo system (single-level) ────────────────────────────────
+let _undoSnapshot = null;
+
+function saveSnapshot() {
+  _undoSnapshot = {
+    state: JSON.parse(JSON.stringify(state)),
+    redHerringId: _redHerring ? _redHerring.id : null,
+  };
+  var undoBtn = document.getElementById('undoBtn');
+  if (undoBtn) undoBtn.style.opacity = '1';
+}
+
+function undoAction() {
+  if (!_undoSnapshot) { return; }
+  state = _undoSnapshot.state;
+  _redHerring = _undoSnapshot.redHerringId !== null
+    ? getPlayer(_undoSnapshot.redHerringId)
+    : null;
+  _undoSnapshot = null;
+  var undoBtn = document.getElementById('undoBtn');
+  if (undoBtn) undoBtn.style.opacity = '0.4';
+  addLog('↩ Undo applied.', 'phase');
+  render();
+}
+
+// ── Seat reordering ────────────────────────────────────────────
+function movePlayer(id, direction) {
+  var idx = state.players.findIndex(function(p) { return p.id === id; });
+  if (idx === -1) return;
+  var newIdx = idx + direction;
+  if (newIdx < 0 || newIdx >= state.players.length) return;
+  saveSnapshot();
+  var tmp = state.players[idx];
+  state.players[idx] = state.players[newIdx];
+  state.players[newIdx] = tmp;
+  render();
+}
 
 // ── Confirm dialog ────────────────────────────────────────────
 // showConfirm(message, onYes, onNo?) — shows custom confirm dialog
@@ -3477,6 +3635,7 @@ function newGame() {
 // ============================================================
 function advancePhase() {
   if (state.gameOver) return;
+  saveSnapshot();
   var nomSel = document.getElementById('nominatorSelect');
   var nommedSel = document.getElementById('nominatedSelect');
   if (nomSel) nomSel.value = '';
@@ -3636,6 +3795,7 @@ function getPlayer(id) {
 function killPlayer(id, cause) {
   var p = getPlayer(id);
   if (!p || !p.alive) return;
+  if (cause !== 'pacifist_confirmed') saveSnapshot();
 
   // Assassin kills bypass ALL protection — check first and fall straight through to death
   // pacifist_confirmed = ST chose "No" on Pacifist dialog; treat as execution, skip re-check
@@ -4186,6 +4346,7 @@ function addTravellerToGame(name, charName, alignment) {
 function toggleState(id, stateKey) {
   var p = getPlayer(id);
   if (!p) return;
+  saveSnapshot();
   p[stateKey] = !p[stateKey];
   var labels = { drunk: 'Drunk', poisoned: 'Poisoned', protected: 'Protected' };
   addLog(p.name + ' is now ' + (p[stateKey] ? '' : 'no longer ') + (labels[stateKey] || stateKey) + '.', 'phase');
@@ -4349,6 +4510,7 @@ function executePlayer() {
   var leaders = state.nominations.filter(function(n) { return n.votes === maxVotes && maxVotes >= needed; });
   if (leaders.length === 0) { alert('No nomination has enough votes to execute.'); return; }
   if (leaders.length > 1) { alert('There is a tie — cannot execute.'); return; }
+  saveSnapshot();
   var id = leaders[0].nominatedId;
   state.executedToday = true;
   state.currentVotes = 0;
@@ -4559,6 +4721,7 @@ function renderPlayers() {
     const isTrav = p.isTraveller;
     card.className = 'player-card' + (!p.alive ? ' dead' : '') + (isTrav ? ' traveller-card' : '');
     card.dataset.pid = p.id;
+    card.dataset.ptype = p.type;
 
     const typeClass = 'type-' + p.type;
     let stateHtml = '';
@@ -4691,13 +4854,22 @@ function renderPlayers() {
       extraHtml += '<div style="padding-left:1.5rem;margin-bottom:0.3rem;"><span style="font-size:0.55rem;color:var(--traveller);font-family:Cinzel,serif;letter-spacing:1px;">✦ Traveller — Align: ' + (p.alignment === 'good' ? 'Good' : 'Evil') + '</span></div>';
     }
 
+    const charData = getCharByName(p.character);
+    const charAbility = charData ? charData.ability : '';
+    const isFirst = idx === 0;
+    const isLast = idx === state.players.length - 1;
+
     card.innerHTML =
       '<div class="player-name-row">' +
+        '<div class="seat-btns">' +
+          '<button class="seat-btn" data-action="seatup" title="Move up"' + (isFirst ? ' disabled style="opacity:0.2;cursor:default;"' : '') + '>▲</button>' +
+          '<button class="seat-btn" data-action="seatdown" title="Move down"' + (isLast ? ' disabled style="opacity:0.2;cursor:default;"' : '') + '>▼</button>' +
+        '</div>' +
         '<div class="player-num">' + (idx + 1) + '</div>' +
         '<div class="player-name">' + p.name + '</div>' +
         '<div class="alignment-dot ' + p.alignment + '"></div>' +
       '</div>' +
-      '<div class="character-badge">' + p.character +
+      '<div class="character-badge"><span class="char-tooltip" data-ability="' + charAbility.replace(/"/g, '&quot;') + '">' + p.character + '</span>' +
         '<span class="character-type ' + typeClass + '">' + p.type + '</span>' +
       '</div>' +
       (stateHtml ? '<div class="state-pills">' + stateHtml + '</div>' : '') +
@@ -4710,7 +4882,9 @@ function renderPlayers() {
       btn.addEventListener('click', function() {
         var action = btn.dataset.action;
         var pid = parseInt(card.dataset.pid);
-        if (action === 'kill')        killPlayer(pid, 'demon');
+        if (action === 'seatup')   { movePlayer(pid, -1); return; }
+        else if (action === 'seatdown') { movePlayer(pid, 1); return; }
+        else if (action === 'kill')        killPlayer(pid, 'demon');
         else if (action === 'exile')      exilePlayer(pid);
         else if (action === 'revive')     revivePlayer(pid);
         else if (action === 'usevote')    useVoteToken(pid);
@@ -5192,8 +5366,93 @@ function hasSavedGame() {
 }
 
 // ============================================================
-// INIT
+// COUNTDOWN TIMER
 // ============================================================
+var _timerInterval = null;
+var _timerRemaining = 60;  // seconds
+var _timerRunning = false;
+
+function timerBeep() {
+  try {
+    var ctx = new (window.AudioContext || window.webkitAudioContext)();
+    function beep(freq, start, dur) {
+      var o = ctx.createOscillator();
+      var g = ctx.createGain();
+      o.connect(g);
+      g.connect(ctx.destination);
+      o.frequency.value = freq;
+      o.type = 'sine';
+      g.gain.setValueAtTime(0.4, ctx.currentTime + start);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + dur);
+      o.start(ctx.currentTime + start);
+      o.stop(ctx.currentTime + start + dur + 0.05);
+    }
+    beep(880, 0,    0.18);
+    beep(880, 0.22, 0.18);
+    beep(1100, 0.44, 0.35);
+  } catch(e) {}
+}
+
+function timerFormat(secs) {
+  var m = Math.floor(secs / 60);
+  var s = secs % 60;
+  return m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function timerSetDisplay() {
+  var el = document.getElementById('timerDisplay');
+  if (!el) return;
+  el.textContent = timerFormat(_timerRemaining);
+  el.className = 'timer-display';
+  if (_timerRemaining <= 0) el.classList.add('done');
+  else if (_timerRemaining <= 10) el.classList.add('warning');
+  var startBtn = document.getElementById('timerStartBtn');
+  if (startBtn) startBtn.classList.toggle('running', _timerRunning);
+}
+
+function timerStart() {
+  if (_timerRunning || _timerRemaining <= 0) return;
+  _timerRunning = true;
+  timerSetDisplay();
+  _timerInterval = setInterval(function() {
+    _timerRemaining--;
+    timerSetDisplay();
+    if (_timerRemaining <= 0) {
+      _timerRunning = false;
+      clearInterval(_timerInterval);
+      timerBeep();
+    }
+  }, 1000);
+}
+
+function timerPause() {
+  _timerRunning = false;
+  clearInterval(_timerInterval);
+  timerSetDisplay();
+}
+
+function timerReset(secs) {
+  timerPause();
+  _timerRemaining = (secs !== undefined) ? secs : 60;
+  timerSetDisplay();
+}
+
+function initTimer() {
+  var startBtn  = document.getElementById('timerStartBtn');
+  var pauseBtn  = document.getElementById('timerPauseBtn');
+  var resetBtn  = document.getElementById('timerResetBtn');
+  if (startBtn) startBtn.addEventListener('click', timerStart);
+  if (pauseBtn) pauseBtn.addEventListener('click', timerPause);
+  if (resetBtn) resetBtn.addEventListener('click', function() { timerReset(); });
+  document.querySelectorAll('.timer-preset').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      timerReset(parseInt(btn.dataset.secs));
+    });
+  });
+  timerSetDisplay();
+}
+
+
 document.addEventListener('DOMContentLoaded', function() {
   // Setup modal
   document.getElementById('editionSelect').addEventListener('change', refreshCharacterSelects);
@@ -5207,6 +5466,8 @@ document.addEventListener('DOMContentLoaded', function() {
   // Phase bar
   document.getElementById('advancePhaseBtn').addEventListener('click', advancePhase);
   document.getElementById('revertPhaseBtn').addEventListener('click', revertPhase);
+  document.getElementById('undoBtn').addEventListener('click', undoAction);
+  document.getElementById('undoBtn').style.opacity = '0.4';
   document.getElementById('saveGameBtn').addEventListener('click', saveGame);
   document.getElementById('loadGameBtn').addEventListener('click', function() {
     if (confirm('Load saved game? Current game will be replaced.')) loadGame();
@@ -5247,6 +5508,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   // Start
   initSetup();
+  initTimer();
 });
 </script>
 </body>
