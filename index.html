@@ -3919,12 +3919,45 @@ function killPlayer(id, cause) {
     }
   }
   if (p.type === 'demon' && cause === 'demon') {
-    var minion = state.players.find(function(x) { return x.alive && x.type === 'minion'; });
-    if (minion) {
+    var aliveMinions = state.players.filter(function(x) { return x.alive && x.type === 'minion'; });
+    if (aliveMinions.length === 1) {
       var demonCharName3 = p.character;
-      minion.type = 'demon';
-      minion.character = demonCharName3;
-      addLog(p.name + ' (' + demonCharName3 + ') killed themselves! ' + minion.name + ' becomes the new ' + demonCharName3 + '!', 'death');
+      aliveMinions[0].type = 'demon';
+      aliveMinions[0].character = demonCharName3;
+      addLog(p.name + ' (' + demonCharName3 + ') killed themselves! ' + aliveMinions[0].name + ' becomes the new ' + demonCharName3 + '!', 'death');
+    } else if (aliveMinions.length > 1) {
+      var demonCharName3 = p.character;
+      var deadDemonName = p.name;
+      state._impStarPassPending = true;
+      var existingImpModal = document.getElementById('impStarPassModal');
+      if (existingImpModal) existingImpModal.remove();
+      var minionBtns = aliveMinions.map(function(m) {
+        return '<button data-mid="' + m.id + '" style="width:100%;background:linear-gradient(135deg,rgba(139,34,82,0.4),rgba(74,31,58,0.6));border:1px solid var(--border-glow);color:var(--cream);font-family:Cinzel,serif;font-size:0.8rem;letter-spacing:2px;padding:0.6rem;cursor:pointer;text-transform:uppercase;margin-bottom:0.4rem;">' + m.name + ' (' + m.character + ')</button>';
+      }).join('');
+      var impModal = document.createElement('div');
+      impModal.id = 'impStarPassModal';
+      impModal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:150;display:flex;align-items:center;justify-content:center;padding:1rem;';
+      impModal.innerHTML =
+        '<div style="background:var(--bg-panel);border:1px solid var(--border-glow);padding:1.5rem;max-width:360px;width:100%;box-shadow:0 0 40px rgba(139,34,82,0.3);">' +
+          '<div style="font-family:Cinzel Decorative,serif;color:var(--gold-light);font-size:1rem;text-align:center;margin-bottom:1rem;letter-spacing:2px;">\u{1F608} ' + deadDemonName + ' kills themselves!</div>' +
+          '<div style="font-size:0.75rem;color:var(--cream-dim);margin-bottom:1rem;font-style:italic;">Choose which Minion becomes the new <strong style=\'color:var(--gold)\'>' + demonCharName3 + '</strong>:</div>' +
+          minionBtns +
+        '</div>';
+      document.body.appendChild(impModal);
+      impModal.querySelectorAll('button[data-mid]').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+          var chosenId = parseInt(btn.getAttribute('data-mid'));
+          var chosenMinion = getPlayer(chosenId);
+          if (chosenMinion) {
+            chosenMinion.type = 'demon';
+            chosenMinion.character = demonCharName3;
+            addLog(deadDemonName + ' (' + demonCharName3 + ') killed themselves! ' + chosenMinion.name + ' becomes the new ' + demonCharName3 + '!', 'death');
+          }
+          state._impStarPassPending = false;
+          impModal.remove();
+          render();
+        });
+      });
     }
   }
   // Ravenkeeper: wakes on night death to learn a character
@@ -4529,6 +4562,7 @@ function executePlayer() {
 
 function checkWinCondition() {
   if (state.gameOver) return;
+  if (state._impStarPassPending) return;
   const alive = state.players.filter(p => p.alive);
   const aliveNonTravellers = alive.filter(p => !p.isTraveller);
   const aliveDemon = alive.find(p => p.type === 'demon');
